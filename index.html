@@ -1,0 +1,1055 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Coface Shock Simulator - Macroeconomic Stress Testing</title>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
+    <style>
+        :root {
+            --primary: #0ea5e9;
+            --primary-dark: #0284c7;
+            --secondary: #8b5cf6;
+            --accent: #f59e0b;
+            --warning: #f59e0b;
+            --danger: #ef4444;
+            --success: #10b981;
+            --bg-dark: #0c1015;
+            --bg-card: #131920;
+            --bg-elevated: #1c242d;
+            --text-primary: #f1f5f9;
+            --text-secondary: #94a3b8;
+            --text-muted: #64748b;
+            --border: #2a3441;
+            --coface-red: #e31937;
+        }
+
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+
+        body {
+            font-family: 'Inter', sans-serif;
+            background: var(--bg-dark);
+            color: var(--text-primary);
+            min-height: 100vh;
+        }
+
+        .header {
+            background: linear-gradient(180deg, rgba(14, 165, 233, 0.1) 0%, transparent 100%);
+            border-bottom: 1px solid var(--border);
+            padding: 1rem 2rem;
+        }
+
+        .header-content {
+            max-width: 1800px;
+            margin: 0 auto;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+
+        .logo {
+            display: flex;
+            align-items: center;
+            gap: 0.75rem;
+        }
+
+        .logo-icon {
+            width: 44px;
+            height: 44px;
+            background: linear-gradient(135deg, var(--primary) 0%, #38bdf8 100%);
+            border-radius: 10px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 1.3rem;
+        }
+
+        .logo-text {
+            font-size: 1.3rem;
+            font-weight: 700;
+            background: linear-gradient(135deg, var(--primary) 0%, #7dd3fc 100%);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+        }
+
+        .logo-subtitle {
+            font-size: 0.75rem;
+            color: var(--text-secondary);
+        }
+
+        .header-badges {
+            display: flex;
+            gap: 0.5rem;
+        }
+
+        .badge {
+            background: var(--bg-card);
+            border: 1px solid var(--border);
+            padding: 0.4rem 0.75rem;
+            border-radius: 6px;
+            font-size: 0.75rem;
+            color: var(--text-secondary);
+        }
+
+        .main {
+            max-width: 1800px;
+            margin: 0 auto;
+            padding: 1.5rem 2rem;
+            display: grid;
+            grid-template-columns: 340px 1fr 380px;
+            gap: 1.5rem;
+        }
+
+        @media (max-width: 1400px) {
+            .main { grid-template-columns: 1fr; }
+        }
+
+        .card {
+            background: var(--bg-card);
+            border: 1px solid var(--border);
+            border-radius: 12px;
+            overflow: hidden;
+        }
+
+        .card-header {
+            padding: 1rem 1.25rem;
+            border-bottom: 1px solid var(--border);
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+        }
+
+        .card-title {
+            font-size: 0.9rem;
+            font-weight: 600;
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+        }
+
+        .card-body { padding: 1.25rem; }
+
+        /* Scenario Selector */
+        .scenario-card {
+            background: var(--bg-elevated);
+            border: 2px solid transparent;
+            border-radius: 12px;
+            padding: 1rem;
+            margin-bottom: 0.75rem;
+            cursor: pointer;
+            transition: all 0.2s;
+        }
+
+        .scenario-card:hover {
+            background: var(--bg-dark);
+        }
+
+        .scenario-card.selected {
+            border-color: var(--primary);
+            background: rgba(14, 165, 233, 0.1);
+        }
+
+        .scenario-header {
+            display: flex;
+            align-items: center;
+            gap: 0.75rem;
+            margin-bottom: 0.5rem;
+        }
+
+        .scenario-icon {
+            font-size: 1.5rem;
+        }
+
+        .scenario-name {
+            font-size: 0.9rem;
+            font-weight: 600;
+        }
+
+        .scenario-severity {
+            margin-left: auto;
+            font-size: 0.7rem;
+            padding: 0.2rem 0.5rem;
+            border-radius: 4px;
+        }
+
+        .scenario-severity.mild { background: rgba(16, 185, 129, 0.2); color: var(--success); }
+        .scenario-severity.moderate { background: rgba(245, 158, 11, 0.2); color: var(--warning); }
+        .scenario-severity.severe { background: rgba(239, 68, 68, 0.2); color: var(--danger); }
+
+        .scenario-desc {
+            font-size: 0.75rem;
+            color: var(--text-muted);
+            line-height: 1.4;
+        }
+
+        /* Parameter Sliders */
+        .param-group {
+            margin-bottom: 1rem;
+        }
+
+        .param-label {
+            display: flex;
+            justify-content: space-between;
+            margin-bottom: 0.5rem;
+        }
+
+        .param-name {
+            font-size: 0.8rem;
+            color: var(--text-secondary);
+        }
+
+        .param-value {
+            font-size: 0.8rem;
+            font-weight: 600;
+            color: var(--primary);
+            font-family: 'JetBrains Mono', monospace;
+        }
+
+        .param-slider {
+            width: 100%;
+            height: 6px;
+            border-radius: 3px;
+            background: var(--bg-dark);
+            outline: none;
+            -webkit-appearance: none;
+        }
+
+        .param-slider::-webkit-slider-thumb {
+            -webkit-appearance: none;
+            width: 16px;
+            height: 16px;
+            border-radius: 50%;
+            background: var(--primary);
+            cursor: pointer;
+            box-shadow: 0 0 8px rgba(14, 165, 233, 0.5);
+        }
+
+        /* Chart Area */
+        .chart-container {
+            height: 300px;
+            background: var(--bg-elevated);
+            border-radius: 8px;
+            padding: 1rem;
+            position: relative;
+            overflow: hidden;
+        }
+
+        .chart-title {
+            font-size: 0.8rem;
+            font-weight: 600;
+            margin-bottom: 0.75rem;
+        }
+
+        .chart-grid {
+            position: absolute;
+            top: 50px;
+            left: 60px;
+            right: 20px;
+            bottom: 40px;
+        }
+
+        .chart-y-axis {
+            position: absolute;
+            left: 0;
+            top: 50px;
+            bottom: 40px;
+            width: 50px;
+            display: flex;
+            flex-direction: column;
+            justify-content: space-between;
+            font-size: 0.65rem;
+            color: var(--text-muted);
+            text-align: right;
+            padding-right: 8px;
+        }
+
+        .chart-x-axis {
+            position: absolute;
+            left: 60px;
+            right: 20px;
+            bottom: 10px;
+            display: flex;
+            justify-content: space-between;
+            font-size: 0.65rem;
+            color: var(--text-muted);
+        }
+
+        .chart-bars {
+            display: flex;
+            justify-content: space-around;
+            align-items: flex-end;
+            height: 100%;
+            padding: 0 10px;
+        }
+
+        .chart-bar-group {
+            display: flex;
+            gap: 4px;
+            align-items: flex-end;
+        }
+
+        .chart-bar {
+            width: 20px;
+            border-radius: 3px 3px 0 0;
+            transition: height 0.5s ease-out;
+        }
+
+        .chart-bar.baseline { background: var(--primary); }
+        .chart-bar.stressed { background: var(--danger); }
+
+        /* Heatmap */
+        .heatmap {
+            display: grid;
+            grid-template-columns: 80px repeat(6, 1fr);
+            gap: 3px;
+            font-size: 0.7rem;
+        }
+
+        .heatmap-header {
+            font-weight: 600;
+            padding: 0.5rem;
+            text-align: center;
+            color: var(--text-secondary);
+        }
+
+        .heatmap-row-label {
+            padding: 0.5rem;
+            display: flex;
+            align-items: center;
+            color: var(--text-secondary);
+        }
+
+        .heatmap-cell {
+            padding: 0.5rem;
+            text-align: center;
+            border-radius: 4px;
+            font-weight: 600;
+            transition: all 0.3s;
+        }
+
+        .heatmap-cell.low { background: rgba(16, 185, 129, 0.3); color: var(--success); }
+        .heatmap-cell.medium { background: rgba(245, 158, 11, 0.3); color: var(--warning); }
+        .heatmap-cell.high { background: rgba(239, 68, 68, 0.3); color: var(--danger); }
+        .heatmap-cell.critical { background: rgba(239, 68, 68, 0.6); color: white; }
+
+        /* Results Panel */
+        .result-card {
+            background: var(--bg-elevated);
+            border-radius: 8px;
+            padding: 1rem;
+            margin-bottom: 0.75rem;
+        }
+
+        .result-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 0.5rem;
+        }
+
+        .result-label {
+            font-size: 0.75rem;
+            color: var(--text-muted);
+        }
+
+        .result-value {
+            font-size: 1.5rem;
+            font-weight: 700;
+        }
+
+        .result-change {
+            font-size: 0.8rem;
+            display: flex;
+            align-items: center;
+            gap: 0.25rem;
+        }
+
+        .result-change.negative { color: var(--danger); }
+        .result-change.positive { color: var(--success); }
+
+        /* Risk Distribution */
+        .distribution-bar {
+            height: 24px;
+            border-radius: 4px;
+            display: flex;
+            overflow: hidden;
+            margin: 0.75rem 0;
+        }
+
+        .dist-segment {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 0.65rem;
+            font-weight: 600;
+            transition: width 0.5s;
+        }
+
+        .dist-segment.low { background: var(--success); }
+        .dist-segment.moderate { background: var(--warning); }
+        .dist-segment.high { background: var(--danger); }
+
+        .dist-legend {
+            display: flex;
+            justify-content: space-between;
+            font-size: 0.7rem;
+            color: var(--text-muted);
+        }
+
+        /* Alert Triggers */
+        .alert-item {
+            display: flex;
+            align-items: center;
+            gap: 0.75rem;
+            padding: 0.75rem;
+            background: var(--bg-dark);
+            border-radius: 8px;
+            margin-bottom: 0.5rem;
+            border-left: 3px solid var(--danger);
+        }
+
+        .alert-item.warning {
+            border-left-color: var(--warning);
+        }
+
+        .alert-icon {
+            font-size: 1.25rem;
+        }
+
+        .alert-text {
+            flex: 1;
+            font-size: 0.8rem;
+        }
+
+        .alert-action {
+            font-size: 0.7rem;
+            color: var(--primary);
+            cursor: pointer;
+        }
+
+        /* Timeline */
+        .timeline {
+            display: flex;
+            justify-content: space-between;
+            padding: 1rem 0;
+            position: relative;
+        }
+
+        .timeline::before {
+            content: '';
+            position: absolute;
+            top: 50%;
+            left: 20px;
+            right: 20px;
+            height: 2px;
+            background: var(--border);
+        }
+
+        .timeline-point {
+            position: relative;
+            z-index: 1;
+            text-align: center;
+        }
+
+        .timeline-dot {
+            width: 16px;
+            height: 16px;
+            border-radius: 50%;
+            background: var(--bg-card);
+            border: 3px solid var(--border);
+            margin: 0 auto 0.5rem;
+        }
+
+        .timeline-dot.active {
+            background: var(--primary);
+            border-color: var(--primary);
+        }
+
+        .timeline-dot.danger {
+            background: var(--danger);
+            border-color: var(--danger);
+        }
+
+        .timeline-label {
+            font-size: 0.65rem;
+            color: var(--text-muted);
+        }
+
+        .timeline-value {
+            font-size: 0.75rem;
+            font-weight: 600;
+            margin-top: 0.25rem;
+        }
+
+        /* Buttons */
+        .btn {
+            padding: 0.6rem 1.25rem;
+            border-radius: 8px;
+            font-size: 0.85rem;
+            font-weight: 500;
+            border: none;
+            cursor: pointer;
+            transition: all 0.2s;
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+        }
+
+        .btn-primary {
+            background: linear-gradient(135deg, var(--primary) 0%, #38bdf8 100%);
+            color: white;
+        }
+
+        .btn-primary:hover {
+            transform: translateY(-1px);
+            box-shadow: 0 4px 12px rgba(14, 165, 233, 0.3);
+        }
+
+        .btn-secondary {
+            background: var(--bg-elevated);
+            color: var(--text-secondary);
+            border: 1px solid var(--border);
+        }
+
+        .btn-danger {
+            background: rgba(239, 68, 68, 0.15);
+            color: var(--danger);
+        }
+
+        .controls {
+            display: flex;
+            gap: 0.75rem;
+            padding: 1rem 1.25rem;
+            border-top: 1px solid var(--border);
+        }
+
+        /* Loading Animation */
+        .simulation-running {
+            display: none;
+            text-align: center;
+            padding: 2rem;
+        }
+
+        .simulation-running.active {
+            display: block;
+        }
+
+        .spinner {
+            width: 50px;
+            height: 50px;
+            border: 4px solid var(--bg-elevated);
+            border-top-color: var(--primary);
+            border-radius: 50%;
+            animation: spin 1s linear infinite;
+            margin: 0 auto 1rem;
+        }
+
+        @keyframes spin {
+            to { transform: rotate(360deg); }
+        }
+
+        /* Monte Carlo Progress */
+        .mc-progress {
+            background: var(--bg-dark);
+            border-radius: 8px;
+            padding: 1rem;
+            margin-bottom: 1rem;
+        }
+
+        .mc-header {
+            display: flex;
+            justify-content: space-between;
+            font-size: 0.8rem;
+            margin-bottom: 0.5rem;
+        }
+
+        .mc-bar {
+            height: 8px;
+            background: var(--bg-elevated);
+            border-radius: 4px;
+            overflow: hidden;
+        }
+
+        .mc-fill {
+            height: 100%;
+            background: linear-gradient(90deg, var(--primary), var(--secondary));
+            border-radius: 4px;
+            transition: width 0.1s;
+        }
+    </style>
+</head>
+<body>
+    <header class="header">
+        <div class="header-content">
+            <div class="logo">
+                <div class="logo-icon">🌊</div>
+                <div>
+                    <div class="logo-text">Coface Shock Simulator</div>
+                    <div class="logo-subtitle">Macroeconomic Stress Testing</div>
+                </div>
+            </div>
+            <div class="header-badges">
+                <span class="badge">Monte Carlo</span>
+                <span class="badge">10,000 Simulations</span>
+                <span class="badge">195M Companies</span>
+                <span class="badge">Real-time Scoring</span>
+            </div>
+        </div>
+    </header>
+
+    <main class="main">
+        <!-- Left Panel - Scenario Config -->
+        <div>
+            <div class="card" style="margin-bottom: 1rem;">
+                <div class="card-header">
+                    <h3 class="card-title">📋 Scenario Selection</h3>
+                </div>
+                <div class="card-body">
+                    <div class="scenario-card selected" onclick="selectScenario('tariff')">
+                        <div class="scenario-header">
+                            <span class="scenario-icon">🚢</span>
+                            <span class="scenario-name">Trade War Escalation</span>
+                            <span class="scenario-severity severe">Severe</span>
+                        </div>
+                        <p class="scenario-desc">25% tariffs on EU goods, retaliatory measures, supply chain disruption</p>
+                    </div>
+                    <div class="scenario-card" onclick="selectScenario('recession')">
+                        <div class="scenario-header">
+                            <span class="scenario-icon">📉</span>
+                            <span class="scenario-name">European Recession</span>
+                            <span class="scenario-severity moderate">Moderate</span>
+                        </div>
+                        <p class="scenario-desc">GDP -2.5%, rising unemployment, consumer spending decline</p>
+                    </div>
+                    <div class="scenario-card" onclick="selectScenario('energy')">
+                        <div class="scenario-header">
+                            <span class="scenario-icon">⚡</span>
+                            <span class="scenario-name">Energy Crisis</span>
+                            <span class="scenario-severity severe">Severe</span>
+                        </div>
+                        <p class="scenario-desc">Gas prices +150%, industrial rationing, inflation spike</p>
+                    </div>
+                    <div class="scenario-card" onclick="selectScenario('rates')">
+                        <div class="scenario-header">
+                            <span class="scenario-icon">📈</span>
+                            <span class="scenario-name">Rate Shock</span>
+                            <span class="scenario-severity mild">Mild</span>
+                        </div>
+                        <p class="scenario-desc">ECB rates +200bps, refinancing pressure, credit tightening</p>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Parameter Adjustments -->
+            <div class="card">
+                <div class="card-header">
+                    <h3 class="card-title">⚙️ Scenario Parameters</h3>
+                </div>
+                <div class="card-body">
+                    <div class="param-group">
+                        <div class="param-label">
+                            <span class="param-name">GDP Growth Impact</span>
+                            <span class="param-value" id="gdpValue">-2.5%</span>
+                        </div>
+                        <input type="range" class="param-slider" id="gdpSlider" min="-5" max="2" step="0.1" value="-2.5" oninput="updateParam('gdp')">
+                    </div>
+                    <div class="param-group">
+                        <div class="param-label">
+                            <span class="param-name">Inflation Rate</span>
+                            <span class="param-value" id="inflationValue">6.2%</span>
+                        </div>
+                        <input type="range" class="param-slider" id="inflationSlider" min="1" max="15" step="0.1" value="6.2" oninput="updateParam('inflation')">
+                    </div>
+                    <div class="param-group">
+                        <div class="param-label">
+                            <span class="param-name">Interest Rate Change</span>
+                            <span class="param-value" id="rateValue">+150bps</span>
+                        </div>
+                        <input type="range" class="param-slider" id="rateSlider" min="0" max="300" step="25" value="150" oninput="updateParam('rate')">
+                    </div>
+                    <div class="param-group">
+                        <div class="param-label">
+                            <span class="param-name">Time Horizon</span>
+                            <span class="param-value" id="horizonValue">12 months</span>
+                        </div>
+                        <input type="range" class="param-slider" id="horizonSlider" min="3" max="24" step="3" value="12" oninput="updateParam('horizon')">
+                    </div>
+                </div>
+                <div class="controls">
+                    <button class="btn btn-primary" onclick="runSimulation()" style="flex: 1;">
+                        <span>🚀</span> Run Simulation
+                    </button>
+                    <button class="btn btn-secondary" onclick="resetParams()">
+                        <span>↺</span> Reset
+                    </button>
+                </div>
+            </div>
+        </div>
+
+        <!-- Center Panel - Results -->
+        <div>
+            <!-- Monte Carlo Progress -->
+            <div class="mc-progress" id="mcProgress" style="display: none;">
+                <div class="mc-header">
+                    <span>Monte Carlo Simulation</span>
+                    <span id="mcCount">0 / 10,000</span>
+                </div>
+                <div class="mc-bar">
+                    <div class="mc-fill" id="mcFill" style="width: 0%"></div>
+                </div>
+            </div>
+
+            <!-- Sector Impact Chart -->
+            <div class="card" style="margin-bottom: 1rem;">
+                <div class="card-header">
+                    <h3 class="card-title">📊 Default Rate by Sector</h3>
+                    <div style="display: flex; gap: 1rem; font-size: 0.7rem;">
+                        <span style="display: flex; align-items: center; gap: 0.3rem;"><span style="width: 12px; height: 12px; background: var(--primary); border-radius: 2px;"></span> Baseline</span>
+                        <span style="display: flex; align-items: center; gap: 0.3rem;"><span style="width: 12px; height: 12px; background: var(--danger); border-radius: 2px;"></span> Stressed</span>
+                    </div>
+                </div>
+                <div class="card-body">
+                    <div class="chart-container" id="sectorChart">
+                        <div class="chart-y-axis">
+                            <span>15%</span>
+                            <span>10%</span>
+                            <span>5%</span>
+                            <span>0%</span>
+                        </div>
+                        <div class="chart-grid">
+                            <div class="chart-bars" id="chartBars">
+                                <!-- Populated by JS -->
+                            </div>
+                        </div>
+                        <div class="chart-x-axis" id="chartXAxis">
+                            <!-- Populated by JS -->
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Regional Heatmap -->
+            <div class="card">
+                <div class="card-header">
+                    <h3 class="card-title">🗺️ Regional Risk Heatmap</h3>
+                </div>
+                <div class="card-body">
+                    <div class="heatmap" id="heatmap">
+                        <div class="heatmap-header"></div>
+                        <div class="heatmap-header">Auto</div>
+                        <div class="heatmap-header">Retail</div>
+                        <div class="heatmap-header">Energy</div>
+                        <div class="heatmap-header">Constr</div>
+                        <div class="heatmap-header">Tech</div>
+                        <div class="heatmap-header">Agri</div>
+                        <!-- Rows populated by JS -->
+                    </div>
+
+                    <div style="margin-top: 1.5rem;">
+                        <div class="chart-title">Default Timeline Projection</div>
+                        <div class="timeline" id="timeline">
+                            <!-- Populated by JS -->
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Right Panel - Impact Summary -->
+        <div>
+            <div class="card" style="margin-bottom: 1rem;">
+                <div class="card-header">
+                    <h3 class="card-title">💰 Portfolio Impact</h3>
+                </div>
+                <div class="card-body">
+                    <div class="result-card">
+                        <div class="result-header">
+                            <span class="result-label">Expected Loss Increase</span>
+                        </div>
+                        <div class="result-value" id="expectedLoss" style="color: var(--text-muted);">—</div>
+                        <div class="result-change negative" id="lossChange" style="display: none;">
+                            <span>↑</span> <span id="lossChangeValue"></span> vs baseline
+                        </div>
+                    </div>
+
+                    <div class="result-card">
+                        <div class="result-header">
+                            <span class="result-label">Companies at Risk</span>
+                        </div>
+                        <div class="result-value" id="companiesAtRisk" style="color: var(--text-muted);">—</div>
+                        <div class="result-change negative" id="riskChange" style="display: none;">
+                            <span>↑</span> <span id="riskChangeValue"></span> additional
+                        </div>
+                    </div>
+
+                    <div class="result-card">
+                        <div class="result-header">
+                            <span class="result-label">Score Migration</span>
+                        </div>
+                        <div style="font-size: 0.75rem; color: var(--text-muted); margin-bottom: 0.5rem;">Portfolio Risk Distribution</div>
+                        <div class="distribution-bar">
+                            <div class="dist-segment low" id="distLow" style="width: 60%;">60%</div>
+                            <div class="dist-segment moderate" id="distMod" style="width: 30%;">30%</div>
+                            <div class="dist-segment high" id="distHigh" style="width: 10%;">10%</div>
+                        </div>
+                        <div class="dist-legend">
+                            <span>Low Risk (7-10)</span>
+                            <span>Moderate (4-6)</span>
+                            <span>High (0-3)</span>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Alert Triggers -->
+            <div class="card" style="margin-bottom: 1rem;">
+                <div class="card-header">
+                    <h3 class="card-title">🚨 Triggered Alerts</h3>
+                    <span style="font-size: 0.7rem; color: var(--text-muted);" id="alertCount">0 alerts</span>
+                </div>
+                <div class="card-body" id="alertsPanel">
+                    <div style="color: var(--text-muted); font-size: 0.8rem; text-align: center; padding: 1rem;">
+                        Run simulation to see alerts...
+                    </div>
+                </div>
+            </div>
+
+            <!-- Actions -->
+            <div class="card">
+                <div class="card-header">
+                    <h3 class="card-title">📤 Export Results</h3>
+                </div>
+                <div class="card-body">
+                    <button class="btn btn-secondary" style="width: 100%; margin-bottom: 0.5rem;" onclick="exportPDF()">
+                        <span>📄</span> Generate Report (PDF)
+                    </button>
+                    <button class="btn btn-secondary" style="width: 100%; margin-bottom: 0.5rem;" onclick="exportCSV()">
+                        <span>📊</span> Export Data (CSV)
+                    </button>
+                    <button class="btn btn-danger" style="width: 100%;" onclick="triggerReview()">
+                        <span>⚠️</span> Flag for Underwriting Review
+                    </button>
+                </div>
+            </div>
+        </div>
+    </main>
+
+    <script>
+        let selectedScenario = 'tariff';
+        let simulationRunning = false;
+
+        const scenarios = {
+            tariff: {
+                gdp: -2.5, inflation: 6.2, rate: 150, horizon: 12,
+                sectors: { Auto: 12.4, Retail: 8.2, Energy: 5.1, Construction: 9.8, Tech: 4.2, Agri: 7.5 },
+                baseline: { Auto: 4.2, Retail: 3.8, Energy: 2.1, Construction: 5.2, Tech: 2.0, Agri: 3.5 },
+                expectedLoss: '€847M', lossChange: '+312%', companiesAtRisk: '14,234', riskChange: '8,456',
+                distLow: 42, distMod: 38, distHigh: 20
+            },
+            recession: {
+                gdp: -2.0, inflation: 4.5, rate: 100, horizon: 12,
+                sectors: { Auto: 9.8, Retail: 10.5, Energy: 3.8, Construction: 11.2, Tech: 5.1, Agri: 6.2 },
+                baseline: { Auto: 4.2, Retail: 3.8, Energy: 2.1, Construction: 5.2, Tech: 2.0, Agri: 3.5 },
+                expectedLoss: '€623M', lossChange: '+189%', companiesAtRisk: '11,892', riskChange: '6,114',
+                distLow: 48, distMod: 35, distHigh: 17
+            },
+            energy: {
+                gdp: -3.5, inflation: 12.0, rate: 200, horizon: 12,
+                sectors: { Auto: 14.2, Retail: 7.8, Energy: 15.5, Construction: 12.4, Tech: 6.8, Agri: 11.2 },
+                baseline: { Auto: 4.2, Retail: 3.8, Energy: 2.1, Construction: 5.2, Tech: 2.0, Agri: 3.5 },
+                expectedLoss: '€1.2B', lossChange: '+456%', companiesAtRisk: '18,456', riskChange: '12,678',
+                distLow: 35, distMod: 40, distHigh: 25
+            },
+            rates: {
+                gdp: -0.5, inflation: 3.2, rate: 200, horizon: 12,
+                sectors: { Auto: 6.1, Retail: 5.2, Energy: 2.8, Construction: 8.5, Tech: 3.2, Agri: 4.1 },
+                baseline: { Auto: 4.2, Retail: 3.8, Energy: 2.1, Construction: 5.2, Tech: 2.0, Agri: 3.5 },
+                expectedLoss: '€312M', lossChange: '+78%', companiesAtRisk: '7,234', riskChange: '2,456',
+                distLow: 55, distMod: 32, distHigh: 13
+            }
+        };
+
+        const regions = ['Germany', 'France', 'Italy', 'Spain', 'UK', 'Poland'];
+
+        function selectScenario(scenario) {
+            selectedScenario = scenario;
+            document.querySelectorAll('.scenario-card').forEach(card => card.classList.remove('selected'));
+            event.currentTarget.classList.add('selected');
+
+            const s = scenarios[scenario];
+            document.getElementById('gdpSlider').value = s.gdp;
+            document.getElementById('inflationSlider').value = s.inflation;
+            document.getElementById('rateSlider').value = s.rate;
+            document.getElementById('horizonSlider').value = s.horizon;
+            updateParam('gdp');
+            updateParam('inflation');
+            updateParam('rate');
+            updateParam('horizon');
+        }
+
+        function updateParam(param) {
+            if (param === 'gdp') {
+                const val = document.getElementById('gdpSlider').value;
+                document.getElementById('gdpValue').textContent = val + '%';
+            } else if (param === 'inflation') {
+                const val = document.getElementById('inflationSlider').value;
+                document.getElementById('inflationValue').textContent = val + '%';
+            } else if (param === 'rate') {
+                const val = document.getElementById('rateSlider').value;
+                document.getElementById('rateValue').textContent = '+' + val + 'bps';
+            } else if (param === 'horizon') {
+                const val = document.getElementById('horizonSlider').value;
+                document.getElementById('horizonValue').textContent = val + ' months';
+            }
+        }
+
+        function runSimulation() {
+            if (simulationRunning) return;
+            simulationRunning = true;
+
+            const progress = document.getElementById('mcProgress');
+            const fill = document.getElementById('mcFill');
+            const count = document.getElementById('mcCount');
+            progress.style.display = 'block';
+
+            let current = 0;
+            const interval = setInterval(() => {
+                current += Math.floor(Math.random() * 500) + 200;
+                if (current > 10000) current = 10000;
+                fill.style.width = (current / 100) + '%';
+                count.textContent = current.toLocaleString() + ' / 10,000';
+
+                if (current >= 10000) {
+                    clearInterval(interval);
+                    setTimeout(() => {
+                        progress.style.display = 'none';
+                        displayResults();
+                        simulationRunning = false;
+                    }, 300);
+                }
+            }, 50);
+        }
+
+        function displayResults() {
+            const s = scenarios[selectedScenario];
+
+            // Update chart
+            const chartBars = document.getElementById('chartBars');
+            const chartXAxis = document.getElementById('chartXAxis');
+            chartBars.innerHTML = '';
+            chartXAxis.innerHTML = '';
+
+            Object.keys(s.sectors).forEach(sector => {
+                const baselineHeight = (s.baseline[sector] / 15) * 200;
+                const stressedHeight = (s.sectors[sector] / 15) * 200;
+
+                chartBars.innerHTML += `
+                    <div class="chart-bar-group">
+                        <div class="chart-bar baseline" style="height: ${baselineHeight}px;"></div>
+                        <div class="chart-bar stressed" style="height: ${stressedHeight}px;"></div>
+                    </div>
+                `;
+                chartXAxis.innerHTML += `<span>${sector}</span>`;
+            });
+
+            // Update heatmap
+            const heatmap = document.getElementById('heatmap');
+            heatmap.innerHTML = `
+                <div class="heatmap-header"></div>
+                <div class="heatmap-header">Auto</div>
+                <div class="heatmap-header">Retail</div>
+                <div class="heatmap-header">Energy</div>
+                <div class="heatmap-header">Constr</div>
+                <div class="heatmap-header">Tech</div>
+                <div class="heatmap-header">Agri</div>
+            `;
+
+            regions.forEach(region => {
+                heatmap.innerHTML += `<div class="heatmap-row-label">${region}</div>`;
+                Object.keys(s.sectors).forEach(sector => {
+                    const base = s.sectors[sector];
+                    const variance = (Math.random() - 0.5) * 4;
+                    const val = (base + variance).toFixed(1);
+                    const level = val > 12 ? 'critical' : val > 8 ? 'high' : val > 5 ? 'medium' : 'low';
+                    heatmap.innerHTML += `<div class="heatmap-cell ${level}">${val}%</div>`;
+                });
+            });
+
+            // Update timeline
+            const timeline = document.getElementById('timeline');
+            const months = ['Now', 'Q1', 'Q2', 'Q3', 'Q4'];
+            const rates = [2.1, 4.5, 7.2, 9.8, s.sectors.Auto];
+            timeline.innerHTML = '';
+            months.forEach((m, i) => {
+                const isDanger = rates[i] > 8;
+                timeline.innerHTML += `
+                    <div class="timeline-point">
+                        <div class="timeline-dot ${i === 4 ? (isDanger ? 'danger' : 'active') : ''}"></div>
+                        <div class="timeline-label">${m}</div>
+                        <div class="timeline-value" style="color: ${isDanger ? 'var(--danger)' : 'var(--text-primary)'};">${rates[i]}%</div>
+                    </div>
+                `;
+            });
+
+            // Update results panel
+            document.getElementById('expectedLoss').textContent = s.expectedLoss;
+            document.getElementById('expectedLoss').style.color = 'var(--danger)';
+            document.getElementById('lossChange').style.display = 'flex';
+            document.getElementById('lossChangeValue').textContent = s.lossChange;
+
+            document.getElementById('companiesAtRisk').textContent = s.companiesAtRisk;
+            document.getElementById('companiesAtRisk').style.color = 'var(--warning)';
+            document.getElementById('riskChange').style.display = 'flex';
+            document.getElementById('riskChangeValue').textContent = s.riskChange;
+
+            document.getElementById('distLow').style.width = s.distLow + '%';
+            document.getElementById('distLow').textContent = s.distLow + '%';
+            document.getElementById('distMod').style.width = s.distMod + '%';
+            document.getElementById('distMod').textContent = s.distMod + '%';
+            document.getElementById('distHigh').style.width = s.distHigh + '%';
+            document.getElementById('distHigh').textContent = s.distHigh + '%';
+
+            // Update alerts
+            const alerts = [
+                { icon: '🚨', text: 'Automotive sector exceeds 10% default threshold', severity: 'danger' },
+                { icon: '⚠️', text: 'German suppliers concentration risk elevated', severity: 'warning' },
+                { icon: '🚨', text: '3 major clients require immediate review', severity: 'danger' }
+            ];
+
+            document.getElementById('alertCount').textContent = alerts.length + ' alerts';
+            document.getElementById('alertsPanel').innerHTML = '';
+            alerts.forEach(alert => {
+                document.getElementById('alertsPanel').innerHTML += `
+                    <div class="alert-item ${alert.severity === 'warning' ? 'warning' : ''}">
+                        <span class="alert-icon">${alert.icon}</span>
+                        <span class="alert-text">${alert.text}</span>
+                        <span class="alert-action">View →</span>
+                    </div>
+                `;
+            });
+        }
+
+        function resetParams() {
+            selectScenario(selectedScenario);
+        }
+
+        function exportPDF() {
+            alert('Generating PDF report...');
+        }
+
+        function exportCSV() {
+            alert('Exporting simulation data to CSV...');
+        }
+
+        function triggerReview() {
+            alert('Flagged for underwriting review. 14,234 companies added to review queue.');
+        }
+
+        // Initialize
+        updateParam('gdp');
+        updateParam('inflation');
+        updateParam('rate');
+        updateParam('horizon');
+    </script>
+</body>
+</html>
